@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { Button, RadioButton, Snackbar, Text } from 'react-native-paper';
-import { getProfile, updateProfile } from './utils/db';
+import { getProfile, updateProfile } from '../utils/db';
 
 const goals = [
   'Lose weight',

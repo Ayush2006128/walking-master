@@ -1,7 +1,7 @@
 import { UserProfile } from '@/types/user-profile.type';
 import * as SQLite from 'expo-sqlite';
 
-const db = SQLite.openDatabaseSync('walking_master.db');
+export const db = SQLite.openDatabaseSync('walking_master.db');
 
 
 

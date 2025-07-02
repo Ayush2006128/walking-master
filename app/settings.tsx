@@ -2,7 +2,7 @@ import { UserProfile } from '@/types/user-profile.type';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Button, HelperText, RadioButton, Snackbar, Text, TextInput } from 'react-native-paper';
-import { getProfile, updateProfile } from './utils/db';
+import { getProfile, saveProfile, updateProfile } from '../utils/db';
 
 export default function SettingsScreen() {
   const [profile, setProfile] = useState<UserProfile | undefined | null>(null);
@@ -33,16 +33,18 @@ export default function SettingsScreen() {
       setError('Height and weight must be numbers.');
       return;
     }
-    if (!profile) {
-      setError('Profile not loaded.');
-      setSnackbar(true);
-      return;
-    }
     try {
-      await updateProfile({ id: profile.id, name, gender, height: Number(height), weight: Number(weight), goal });
+      if (!profile) {
+        // Insert new profile
+        await saveProfile({ name, gender, height: Number(height), weight: Number(weight), goal });
+      } else {
+        // Update existing profile
+        await updateProfile({ id: profile.id, name, gender, height: Number(height), weight: Number(weight), goal });
+      }
+      setError('');
       setSnackbar(true);
-    } catch (e) {
-      setError('Failed to update profile.');
+    } catch (e: any) {
+      setError(e?.message ? `Failed to save profile: ${e.message}` : 'Failed to save profile.');
       setSnackbar(true);
     }
   };

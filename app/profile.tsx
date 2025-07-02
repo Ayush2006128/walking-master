@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Button, HelperText, RadioButton, Snackbar, Text, TextInput } from 'react-native-paper';
-import { initDB, saveProfile } from './utils/db';
+import { initDB, saveProfile } from '../utils/db';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
