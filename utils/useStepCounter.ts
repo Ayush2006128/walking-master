@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 
 // Filtering constants
 const ALPHA = 0.8;
-const MIN_STEP_INTERVAL = 300; // ms
-const THRESHOLD = 1.0; // Lowered for debugging, revert if needed
-const MAX_THRESHOLD = 4.0; // Increased for debugging, revert if needed
-const MIN_GPS_SPEED = 0.1; // Lowered for debugging, revert if needed
+const MIN_STEP_INTERVAL = 300; 
+const THRESHOLD = 0.1;
+const MAX_THRESHOLD = 0.4;
+const MIN_GPS_SPEED = 0.0001;
 
 export function useStepCounter() {
   const [stepCount, setStepCount] = useState(0);
@@ -38,15 +38,6 @@ export function useStepCounter() {
     const timeOk = now - lastStepTime.current > MIN_STEP_INTERVAL;
     const magnitudeOk = filtered > THRESHOLD && filtered < MAX_THRESHOLD;
     const speedOk = isGpsEnabled ? gpsSpeed > MIN_GPS_SPEED : true; // Allow steps without GPS
-    // Always log validation details for debugging
-    console.log("Step validation:", { 
-      filtered: filtered.toFixed(3), 
-      timeOk, 
-      magnitudeOk, 
-      speedOk, 
-      gpsSpeed: gpsSpeed.toFixed(3),
-      isGpsEnabled 
-    });
     
     return timeOk && magnitudeOk && speedOk;
   };
@@ -54,7 +45,6 @@ export function useStepCounter() {
   useEffect(() => {
     let accelSub: any = null;
     let locSub: any = null;
-    let debugInterval: number;
 
     // Setup GPS with better error handling
     const setupGPS = async () => {
@@ -79,11 +69,6 @@ export function useStepCounter() {
             setSpeed(newSpeed);
             currentGpsSpeed.current = newSpeed;
             setIsGpsEnabled(true);
-            
-            // Log GPS updates occasionally
-            if (Math.random() < 0.1) {
-              console.log("GPS Speed updated:", newSpeed.toFixed(3), "m/s");
-            }
           }
         );
         
@@ -99,36 +84,19 @@ export function useStepCounter() {
       try {
         accelSub = Accelerometer.addListener(({ x, y, z }) => {
           const mag = Math.sqrt(x**2 + y**2 + z**2);
-          const filtered = highPass(lowPass(mag));
+          const lowPassFiltered = lowPass(mag);
+          const highPassFiltered = highPass(lowPassFiltered);
           const now = Date.now();
           const gpsSpeedForStep = currentGpsSpeed.current;
-          const valid = isValidStep(filtered, now, gpsSpeedForStep);
-          if (gpsSpeedForStep > 0.1 && (filtered > 1.0) && (filtered < 4.0)) {
+          const valid = isValidStep(highPassFiltered, now, gpsSpeedForStep);
+          if (valid) {
             lastStepTime.current = now;
             setStepCount((c) => c + 1);
           }
-          // Debug log
-          console.log("Step debug:", {
-            mag,
-            filtered,
-            gpsSpeed: gpsSpeedForStep,
-            valid,
-            stepCount: stepCount,
-          });
         });
         
         Accelerometer.setUpdateInterval(20); // 50Hz
         console.log("Accelerometer setup successful");
-        
-        // Debug interval to show we're alive
-        debugInterval = setInterval(() => {
-          console.log("Step counter status:", {
-            stepCount,
-            speed: speed.toFixed(3),
-            isGpsEnabled,
-            lastStepTime: lastStepTime.current
-          });
-        }, 10000); // Every 10 seconds
         
       } catch (error) {
         console.error("Accelerometer setup failed:", error);
@@ -147,9 +115,6 @@ export function useStepCounter() {
       if (locSub) {
         locSub.remove();
         console.log("GPS listener removed");
-      }
-      if (debugInterval) {
-        clearInterval(debugInterval);
       }
     };
   }, []);
